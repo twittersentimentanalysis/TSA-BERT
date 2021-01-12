@@ -5,7 +5,9 @@ __pycache__/
 
 # Extensions
 *.key
-*.config
+
+# Config file
+config.json
 
 # Distribution / packaging
 Models/
