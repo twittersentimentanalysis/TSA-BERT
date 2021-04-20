@@ -5,8 +5,8 @@ import Evaluation
 import numpy as np
 
 from tqdm                       import tqdm
-from sklearn.metrics            import f1_score
-from sklearn.model_selection    import train_test_split
+from sklearn.metrics            import f1_score, accuracy_score
+from sklearn.model_selection    import train_test_split, StratifiedKFold
 from torch.utils.data           import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 from transformers               import BertTokenizer, BertForSequenceClassification, AdamW, get_linear_schedule_with_warmup
 
@@ -16,7 +16,7 @@ def initialize(df):
     X_train, X_val, y_train, y_val = train_test_split(df.index.values, 
                                                     df.label.values, 
                                                     test_size = 0.2, 
-                                                    random_state = 17, 
+                                                    random_state = 42, 
                                                     stratify = df.label.values)
 
     df['data_type'] = ['not_set']*df.shape[0]
@@ -89,24 +89,27 @@ def create_dataloaders(dataset_train, dataset_val, config):
     
     return dataloader_train, dataloader_validation
 
-
-def setup_optimizer(model):
+def setup_optimizer(model, config):    
     optimizer = AdamW(model.parameters(),
-                    lr = 1e-5, 
-                    eps = 1e-8)
+                    lr = config['adam']['lr'], 
+                    eps = config['adam']['eps'],
+                    weight_decay=config['adam']['lr']/config['epochs'])
     return optimizer
 
 def setup_scheduler(dataloader_train, optimizer, config):
     scheduler = get_linear_schedule_with_warmup(optimizer, 
-                                                num_warmup_steps = 0,
-                                                num_training_steps = len(dataloader_train)*config['epochs'])
+                                                num_warmup_steps=0,
+                                                num_training_steps=len(dataloader_train)*config['epochs'])
     return scheduler
 
 
-def f1_score_func(preds, labels):
+def score_func(preds, labels):
     preds_flat = np.argmax(preds, axis=1).flatten()
     labels_flat = labels.flatten()
-    return f1_score(labels_flat, preds_flat, average='weighted')
+
+    # return f1_score(labels_flat, preds_flat, average='weighted')
+    return accuracy_score(labels_flat, preds_flat)
+
 
 def train(model, dataloader_train, dataloader_validation, config):
     seed_val = 17
@@ -115,7 +118,7 @@ def train(model, dataloader_train, dataloader_validation, config):
     torch.manual_seed(seed_val)
     torch.cuda.manual_seed_all(seed_val)
 
-    optimizer = setup_optimizer(model)
+    optimizer = setup_optimizer(model, config)
     scheduler = setup_scheduler(dataloader_train, optimizer, config)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.to(device)
@@ -133,9 +136,8 @@ def train(model, dataloader_train, dataloader_validation, config):
                     'attention_mask': batch[1],
                     'labels':         batch[2],
                     }       
-
-            outputs = model(**inputs)
             
+            outputs = model(**inputs)
             loss = outputs[0]
             loss_train_total += loss.item()
             loss.backward()
@@ -147,15 +149,15 @@ def train(model, dataloader_train, dataloader_validation, config):
             
             progress_bar.set_postfix({'training_loss': '{:.3f}'.format(loss.item()/len(batch))})
             
-            
-        torch.save(model.state_dict(), config['model-path'] + f'{epoch}.model')
+        
+        torch.save(model.state_dict(), f'{config["model-path"]}_{epoch}.model')
             
         tqdm.write(f'\nEpoch {epoch}')
         
         loss_train_avg = loss_train_total/len(dataloader_train)            
         tqdm.write(f'Training loss: {loss_train_avg}')
         
-        val_loss, predictions, true_vals = Evaluation.evaluate(model, dataloader_validation)
-        val_f1 = f1_score_func(predictions, true_vals)
+        val_loss, predictions, true_vals, _  = Evaluation.evaluate(model, dataloader_validation)
+        val_score = score_func(predictions, true_vals)
         tqdm.write(f'Validation loss: {val_loss}')
-        tqdm.write(f'F1 Score (Weighted): {val_f1}')
+        tqdm.write(f'Accuracy Score (Weighted): {val_score}')
