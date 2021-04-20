@@ -17,7 +17,7 @@ def accuracy_per_class(label_dict, preds, labels):
     for label in np.unique(labels_flat):
         y_preds = preds_flat[labels_flat==label]
         y_true = labels_flat[labels_flat==label]
-        print(f'Class: {label_dict_inverse[label]}')
+        print(f'Emotion: {label_dict_inverse[label]}')
         print(f'Accuracy: {len(y_preds[y_preds==label])}/{len(y_true)}\n')
 
     return preds_flat
@@ -32,10 +32,11 @@ def evaluate(model, dataloader_val):
     for batch in dataloader_val:
         batch = tuple(b.to(device) for b in batch)
         
-        inputs = {'input_ids':      batch[0],
-                  'attention_mask': batch[1],
-                  'labels':         batch[2],
-                 }
+        inputs= {
+                    'input_ids':      batch[0],
+                    'attention_mask': batch[1],
+                    'labels':         batch[2],
+                }
 
         with torch.no_grad():        
             outputs = model(**inputs)
@@ -55,7 +56,7 @@ def evaluate(model, dataloader_val):
     true_vals = np.concatenate(true_vals, axis=0)
     
     # Apply softmax to calculate probabilities
-    probs = softmax(predictions, axis=0)
+    probs = softmax(predictions, axis=1)
 
     return loss_val_avg, predictions, true_vals, probs
 
@@ -74,11 +75,11 @@ def load_model(label_dict, config):
 
 
 def report(model, X_test, y_test, y_pred, label_dict):
-    cm = confusion_matrix(y_test, y_pred,  np.array(list((label_dict.values()))))
-    print(cm)
+    cm = confusion_matrix(y_test, y_pred, np.array(list((label_dict.values()))), normalize='true')
 
     from sklearn.metrics import accuracy_score, f1_score
     print("ACCURACY: ", accuracy_score(y_test, y_pred))
+
     print("F1 Score: ", f1_score(y_test, y_pred, average='micro'))
 
     # plot_confusion_matrix(  model, 
@@ -90,7 +91,7 @@ def report(model, X_test, y_test, y_pred, label_dict):
     # plt.show()
     plot_confusion_matrix_show(cm, label_dict.keys())
     
-    cr = classification_report(y_test, y_pred, digits=5, target_names=label_dict.keys())
+    cr = classification_report(y_test, y_pred, zero_division=True, digits=5, labels=np.array(list((label_dict.values()))), target_names=label_dict.keys())
     print(cr)
 
 
@@ -100,7 +101,7 @@ def evaluate_model(model, dataloader_validation, label_dict):
     y_pred = accuracy_per_class(label_dict, predictions, true_vals)
     report(model, dataloader_validation, true_vals, y_pred, label_dict)
 
-    roc_plot_show(5, true_vals, probs)
+    # roc_plot_show(5, true_vals, probs)
     
 
 def roc_plot_show(n_classes, y_test, pred_prob):
@@ -149,7 +150,6 @@ def roc_plot_show(n_classes, y_test, pred_prob):
     plt.title('ROC')
     plt.legend(loc="lower right")
     plt.show()
-
 
 def plot_confusion_matrix_show(cm, target_names, normalize=True):
     import itertools

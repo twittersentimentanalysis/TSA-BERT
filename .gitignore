@@ -10,6 +10,7 @@ __pycache__/
 config.json
 
 # Distribution / packaging
+TSA-BERT-env/
 Models/
 Data/
 .Python
