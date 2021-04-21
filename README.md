@@ -1,16 +1,24 @@
-# Twitter sentiment analysis
-## Tweets preprocessing
-> Tweets preprocessing for applying sentiment analysis
+# BERT Model API
 
-- Github repo: [Tweets preprocessing](https://github.com/aridearriba/TSA-Tweets-preprocessing)
+API for applying sentiment analysis using BERT or BETO model.
 
-## Machine learning models
-> Machine learning models for sentiment analysis
-### Support vector classifier 
-- Github repo: [Support vector classifier](https://github.com/aridearriba/TSA-SVC)
+## Requirements
+- python >= 3.9 [(download it here)](https://www.python.org/downloads/)
 
-### BERT
-- Github repo: [BERT](https://github.com/aridearriba/TSA-BERT)
-- Two variants:
-    - BERT Multilanguage
-    - BETO (BERT in spanish)
+## How to run 
+### Local
+1. Clone this project to a local folder and go to root folder
+
+   `git clone https://github.com/twittersentimentanalysis/TSA-BERT.git`
+
+2. Install required libraries with `pip`
+
+    `pip install -r requirements.txt`
+    
+3. Run the project
+
+    `py RestAPI.py`
+
+4. Make API requests
+
+    Base URL: `http://127.0.0.1:5000/api/v1/`
