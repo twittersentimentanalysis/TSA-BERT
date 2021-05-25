@@ -60,18 +60,6 @@ def evaluate(model, dataloader_val):
 
     return loss_val_avg, predictions, true_vals, probs
 
-def load_model(label_dict, config):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-    model = BertForSequenceClassification.from_pretrained(config["bert-model"][0],
-                                        num_labels = len(label_dict),
-                                        output_attentions = False,
-                                        output_hidden_states = False)
-
-    model.to(device)
-    model.load_state_dict(torch.load(config["pre-trained-model"], map_location=torch.device('cpu')))
-
-    return model
 
 
 def report(model, X_test, y_test, y_pred, label_dict):

@@ -1,6 +1,6 @@
 import json
-import Main
 import Classifier
+import Initialization
 
 from functools      import wraps
 from flask_restful  import Resource, Api
@@ -26,7 +26,9 @@ class Emotion(Resource):
 	@require_appkey
 	def post(self):
 		text = request.json['text']
-		emotions = Classifier.get_emotion(text, model, config, label_dict)
+		bert = request.json['bert']
+		model, config, label_dict = Initialization.load_model(bert)
+		emotions = Classifier.get_emotion(text, model, bert, config, label_dict)
 		return emotions
 
 # Routes
@@ -34,5 +36,4 @@ api.add_resource(Emotion, '/api/v1/emotion')
 
 # Main
 if __name__ == '__main__':
-	model, config, label_dict = Main.load_model()
 	app.run(port='5000')

@@ -11,7 +11,7 @@ config.json
 
 # Distribution / packaging
 TSA-BERT-env/
-Models/
+models-old/
 Data/
 .Python
 build/

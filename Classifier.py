@@ -1,8 +1,8 @@
 import torch
 from transformers import BertTokenizer
 
-def get_emotion(text, model, config, label_dict):
-    tokenizer = BertTokenizer.from_pretrained(config["bert-model"], 
+def get_emotion(text, model, bert, config, label_dict):
+    tokenizer = BertTokenizer.from_pretrained(config["bert-model"][bert], 
                                             do_lower_case = True)
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -31,7 +31,7 @@ def get_emotion(text, model, config, label_dict):
     # _, prediction = torch.max(maxTensorIndex, dim=0)
 
     emotions_prob_softmax = {}
-    possible_labels = config['possible-labels']
+    possible_labels = config['label-dict'].keys()
     for index, possible_label in enumerate(possible_labels):
         index = label_dict[possible_label]
         emotions_prob_softmax[possible_label] = round(softmax[0][index].item(), 5)
@@ -42,7 +42,7 @@ def get_emotion(text, model, config, label_dict):
     # _, prediction = torch.max(maxTensorIndex, dim=0)
 
     emotions_prob_sigmoid = {}
-    possible_labels = config['possible-labels']
+    possible_labels = config['label-dict'].keys()
     for index, possible_label in enumerate(possible_labels):
         index = label_dict[possible_label]
         emotions_prob_sigmoid[possible_label] = round(sigmoid[0][index].item(), 5)
