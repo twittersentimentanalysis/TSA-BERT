@@ -4,8 +4,8 @@ import Testing
 import Evaluation
 
 def main():
-    # train()
-    test()
+    train()
+    # test()
 
 def train():
     df, label_dict, config = Initialization.initialize()
@@ -16,7 +16,7 @@ def train():
 
     dataloader_train, dataloader_validation = Training.create_dataloaders(dataset_train, dataset_val, config)
     
-    # Training.train(training_model, dataloader_train, dataloader_validation, config)
+    Training.train(training_model, dataloader_train, dataloader_validation, config)
 
     loaded_model = Evaluation.load_model(label_dict, config)
     Evaluation.evaluate_model(loaded_model, dataloader_validation, label_dict)
