@@ -1,11 +1,26 @@
 import json
+from pandas.core.indexing import is_label_like
+import torch
 import pandas as pd
+from transformers import BertForSequenceClassification
 
-def initialize():
+def read_config_file(file):
     # read configuration file
-    js = open('config.json').read()
+    js = open(file).read()
     config = json.loads(js)
 
+    return config
+
+def initialize_api():
+    config = read_config_file('config-api.json')
+    label_dict = config["label-dict"]
+
+    return config, label_dict
+
+
+def initialize():
+    config = read_config_file('config.json')
+    
     # read csv and add names to columns
     df = pd.read_csv(config['csv-file'],
                         dtype = str,
@@ -60,3 +75,24 @@ def initialize():
     print(label_dict)
     
     return df, label_dict, config
+
+
+
+def load_pretrained_model(bert, label_dict, config):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    model = BertForSequenceClassification.from_pretrained(config["bert-model"][bert],
+                                        num_labels = len(label_dict),
+                                        output_attentions = False,
+                                        output_hidden_states = False)
+
+    model.to(device)
+    model.load_state_dict(torch.load(config["model"][bert], map_location=torch.device('cpu')))
+
+    return model
+
+
+def load_model(bert):
+    config, label_dict = initialize_api()
+    loaded_model = load_pretrained_model(bert, label_dict, config)
+    return loaded_model, config, label_dict

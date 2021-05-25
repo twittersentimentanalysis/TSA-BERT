@@ -31,11 +31,6 @@ def test():
     loaded_model = Evaluation.load_model(label_dict, config)
     Evaluation.evaluate_model(loaded_model, dataloader_validation, label_dict)
 
-def load_model():
-    df, label_dict, config = Initialization.initialize()
-    loaded_model = Evaluation.load_model(label_dict, config)
-    return loaded_model, config, label_dict
-
 if __name__ == '__main__':
     main()
     
