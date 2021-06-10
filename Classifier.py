@@ -27,8 +27,6 @@ def get_emotion(text, model, bert, config, label_dict):
 
     # Softmax
     softmax = torch.softmax(output[0], dim=1)
-    # _, maxTensorIndex = torch.max(softmax, dim=1)
-    # _, prediction = torch.max(maxTensorIndex, dim=0)
 
     emotions_prob_softmax = {}
     possible_labels = config['label-dict'].keys()
@@ -36,16 +34,6 @@ def get_emotion(text, model, bert, config, label_dict):
         index = label_dict[possible_label]
         emotions_prob_softmax[possible_label] = round(softmax[0][index].item(), 5)
 
-    # Sigmoid
-    sigmoid = torch.sigmoid(output[0])
-    # _, maxTensorIndex = torch.max(sigmoid, dim=1)
-    # _, prediction = torch.max(maxTensorIndex, dim=0)
+    emotions = {"emotions": emotions_prob_softmax}
 
-    emotions_prob_sigmoid = {}
-    possible_labels = config['label-dict'].keys()
-    for index, possible_label in enumerate(possible_labels):
-        index = label_dict[possible_label]
-        emotions_prob_sigmoid[possible_label] = round(sigmoid[0][index].item(), 5)
-
-    emotions = {"emotion-softmax": emotions_prob_softmax, "emotion-sigmoid": emotions_prob_sigmoid}
     return emotions

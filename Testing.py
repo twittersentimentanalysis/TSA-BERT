@@ -1,8 +1,7 @@
-
 import torch
 
 from torch.utils.data           import TensorDataset, DataLoader, SequentialSampler
-from transformers               import BertTokenizer, BertForSequenceClassification
+from transformers               import BertTokenizer
 
 
 # Initialize dataset for testing
@@ -15,8 +14,8 @@ def initialize(df):
 
 
 # Encode data for testing
-def encode_data(df, config):
-    tokenizer = BertTokenizer.from_pretrained(config["bert-model"][0], 
+def encode_data(bert, df, config):
+    tokenizer = BertTokenizer.from_pretrained(config["bert-model"][bert], 
                                             do_lower_case = True)
 
     encoded_data_val = tokenizer.batch_encode_plus(
@@ -37,14 +36,6 @@ def encode_data(df, config):
 
     return dataset_val
 
-
-# Set up BERT Multilingual or BETO model
-def setup_bert_model(bert, label_dict, config):
-    model = BertForSequenceClassification.from_pretrained(config["bert-model"][bert],
-                                                        num_labels = len(label_dict),
-                                                        output_attentions = False,
-                                                        output_hidden_states = False)
-    return model
 
 
 # Create dataloaders
