@@ -1,28 +1,21 @@
-
 import torch
-import random
-import Evaluation
-import numpy as np
 
-from tqdm                       import tqdm
-from sklearn.metrics            import f1_score
-from sklearn.model_selection    import train_test_split
-from torch.utils.data           import TensorDataset, DataLoader, RandomSampler, SequentialSampler
-from transformers               import BertTokenizer, BertForSequenceClassification, AdamW, get_linear_schedule_with_warmup
+from torch.utils.data           import TensorDataset, DataLoader, SequentialSampler
+from transformers               import BertTokenizer
 
 
-
+# Initialize dataset for testing
 def initialize(df):
     X_val = df.processed_tweet.values
     y_val = df.label.values
-
     df['data_type'] = 'val'
 
     return X_val, y_val
 
 
-def encode_data(df, config):
-    tokenizer = BertTokenizer.from_pretrained(config["bert-model"][0], 
+# Encode data for testing
+def encode_data(bert, df, config):
+    tokenizer = BertTokenizer.from_pretrained(config["bert-model"][bert], 
                                             do_lower_case = True)
 
     encoded_data_val = tokenizer.batch_encode_plus(
@@ -45,15 +38,7 @@ def encode_data(df, config):
 
 
 
-def setup_bert_model(label_dict, config):
-    model = BertForSequenceClassification.from_pretrained(config["bert-model"][0],
-                                                        num_labels = len(label_dict),
-                                                        output_attentions = False,
-                                                        output_hidden_states = False)
-    return model
-
-
-
+# Create dataloaders
 def create_dataloaders(dataset_val, config):
     dataloader_validation = DataLoader( dataset_val, 
                                         sampler = SequentialSampler(dataset_val), 

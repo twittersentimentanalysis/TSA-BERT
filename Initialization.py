@@ -1,23 +1,26 @@
 import json
-from pandas.core.indexing import is_label_like
 import torch
-import pandas as pd
-from transformers import BertForSequenceClassification
+import pandas               as pd
+import seaborn              as sns
+import matplotlib.pyplot    as plt
 
+from transformers           import BertForSequenceClassification
+
+# Function to read configuration file
 def read_config_file(file):
-    # read configuration file
     js = open(file).read()
     config = json.loads(js)
 
     return config
 
+# Function to initialize configuration for REST API
 def initialize_api():
     config = read_config_file('config-api.json')
     label_dict = config["label-dict"]
 
     return config, label_dict
 
-
+# Function to initialize system to train and test model
 def initialize():
     config = read_config_file('config.json')
     
@@ -27,7 +30,6 @@ def initialize():
                         header = 0, 
                         index_col = 'id',
                         usecols = ['id', 'processed_tweet', 'emotion'])
-    #df.set_index('id', inplace = True)
 
     print(df.head())
     print(df.emotion.value_counts())
@@ -37,28 +39,10 @@ def initialize():
 
     print(df.emotion.value_counts())
     print("TOTAL :", len(df))
-
-    # # BALANCE DATA
-    # # Shuffle the Dataset.
-    # shuffled_df = df.sample(frac=1,random_state=4)
-
-    # # Randomly select 492 observations from the non-fraud (majority class)
-    # happy_df = shuffled_df.loc[shuffled_df['emotion'] == 'happy'].sample(n=50,random_state=63)
-    # sad_df = shuffled_df.loc[shuffled_df['emotion'] == 'sad'].sample(n=50,random_state=32)
-    # # surprise_df = shuffled_df.loc[shuffled_df['emotion'] == 'surprise'].sample(n=315,random_state=42)
-    # # nrelevant_df = shuffled_df.loc[shuffled_df['emotion'] == 'not-relevant'].sample(n=45,random_state=42)
-    # angry_df = shuffled_df.loc[shuffled_df['emotion'] == 'angry'].sample(n=50,random_state=75)
-    # surprise_df = shuffled_df.loc[shuffled_df['emotion'] == 'surprise'].sample(n=17,random_state=22)
-
-    # # Concatenate both dataframes again
-    # df = pd.concat([happy_df, sad_df, angry_df, surprise_df])
-
-    import seaborn as sns
-    import matplotlib.pyplot as plt
-    # #plot the dataset after the undersampling
+    
+    # plot the dataset after the undersampling
     plt.figure(figsize=(8, 8))
     sns.countplot('emotion', data=df)
-    # plt.title('Balanced Classes')
     plt.show()
 
     # enumerate categories
@@ -77,7 +61,7 @@ def initialize():
     return df, label_dict, config
 
 
-
+# Function to load saved pretrained model
 def load_pretrained_model(bert, label_dict, config):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -92,6 +76,7 @@ def load_pretrained_model(bert, label_dict, config):
     return model
 
 
+# Function to load model for the REST API
 def load_model(bert):
     config, label_dict = initialize_api()
     loaded_model = load_pretrained_model(bert, label_dict, config)

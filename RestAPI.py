@@ -32,7 +32,7 @@ class Emotion(Resource):
 		return emotions
 
 # Routes
-api.add_resource(Emotion, '/api/v1/emotion')  
+api.add_resource(Emotion, '/bert/v1/emotion')  
 
 # Main
 if __name__ == '__main__':

@@ -6,12 +6,12 @@ import numpy as np
 
 from tqdm                       import tqdm
 from sklearn.metrics            import f1_score, accuracy_score
-from sklearn.model_selection    import train_test_split, StratifiedKFold
+from sklearn.model_selection    import train_test_split
 from torch.utils.data           import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 from transformers               import BertTokenizer, BertForSequenceClassification, AdamW, get_linear_schedule_with_warmup
 
 
-
+# Initialize dataset for training
 def initialize(df):
     X_train, X_val, y_train, y_val = train_test_split(df.index.values, 
                                                     df.label.values, 
@@ -22,13 +22,13 @@ def initialize(df):
     df['data_type'] = ['not_set']*df.shape[0]
     df.loc[X_train, 'data_type'] = 'train'
     df.loc[X_val, 'data_type'] = 'val'
-    # print(df.groupby(['category', 'label', 'data_type']).count())
 
     return X_train, X_val, y_train, y_val
 
 
-def encode_data(df, config):
-    tokenizer = BertTokenizer.from_pretrained(config["bert-model"][0], 
+# Enocde data for training
+def encode_data(bert, df, config):
+    tokenizer = BertTokenizer.from_pretrained(config["bert-model"][bert], 
                                             do_lower_case = True)
 
     encoded_data_train = tokenizer.batch_encode_plus(
@@ -68,16 +68,16 @@ def encode_data(df, config):
     return dataset_train, dataset_val
 
 
-
-def setup_bert_model(label_dict, config):
-    model = BertForSequenceClassification.from_pretrained(config["bert-model"][0],
+# Set up BERT Multilingual or BETO model
+def setup_bert_model(bert, label_dict, config):
+    model = BertForSequenceClassification.from_pretrained(config["bert-model"][bert],
                                                         num_labels = len(label_dict),
                                                         output_attentions = False,
                                                         output_hidden_states = False)
     return model
 
 
-
+# Create dataloaders
 def create_dataloaders(dataset_train, dataset_val, config):
     dataloader_train = DataLoader(  dataset_train, 
                                     sampler = RandomSampler(dataset_train), 
@@ -89,6 +89,7 @@ def create_dataloaders(dataset_train, dataset_val, config):
     
     return dataloader_train, dataloader_validation
 
+# Set up AdamW Optimizer
 def setup_optimizer(model, config):    
     optimizer = AdamW(model.parameters(),
                     lr = config['adam']['lr'], 
@@ -96,6 +97,7 @@ def setup_optimizer(model, config):
                     weight_decay=config['adam']['lr']/config['epochs'])
     return optimizer
 
+# Set up scheduler
 def setup_scheduler(dataloader_train, optimizer, config):
     scheduler = get_linear_schedule_with_warmup(optimizer, 
                                                 num_warmup_steps=0,
@@ -103,14 +105,18 @@ def setup_scheduler(dataloader_train, optimizer, config):
     return scheduler
 
 
+# Function to print scores during training
 def score_func(preds, labels):
     preds_flat = np.argmax(preds, axis=1).flatten()
     labels_flat = labels.flatten()
 
-    # return f1_score(labels_flat, preds_flat, average='weighted')
-    return accuracy_score(labels_flat, preds_flat)
+    f1_scr =  f1_score(labels_flat, preds_flat, average='weighted')
+    accuracy = accuracy_score(labels_flat, preds_flat)
+
+    return f1_scr, accuracy
 
 
+# Function to train models
 def train(model, dataloader_train, dataloader_validation, config):
     seed_val = 17
     random.seed(seed_val)
@@ -158,6 +164,7 @@ def train(model, dataloader_train, dataloader_validation, config):
         tqdm.write(f'Training loss: {loss_train_avg}')
         
         val_loss, predictions, true_vals, _  = Evaluation.evaluate(model, dataloader_validation)
-        val_score = score_func(predictions, true_vals)
+        f1_scr, accuracy = score_func(predictions, true_vals)
         tqdm.write(f'Validation loss: {val_loss}')
-        tqdm.write(f'Accuracy Score (Weighted): {val_score}')
+        tqdm.write(f'F1 Score (Weighted): {f1_scr}')
+        tqdm.write(f'Accuracy: {accuracy}')

@@ -3,11 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from scipy.special      import softmax
-from scipy              import interp
-from transformers       import BertForSequenceClassification
-from sklearn.metrics    import confusion_matrix, plot_confusion_matrix, classification_report, roc_auc_score, roc_curve, auc
+from sklearn.metrics    import confusion_matrix, classification_report
 
-
+# Function to compute accuracy of each class
 def accuracy_per_class(label_dict, preds, labels):
     label_dict_inverse = {v: k for k, v in label_dict.items()}
     
@@ -23,6 +21,7 @@ def accuracy_per_class(label_dict, preds, labels):
     return preds_flat
 
 
+# Function to evaluate BERT models
 def evaluate(model, dataloader_val):
     model.eval()
     loss_val_total = 0
@@ -61,85 +60,26 @@ def evaluate(model, dataloader_val):
     return loss_val_avg, predictions, true_vals, probs
 
 
-
+# Function to report results 
 def report(model, X_test, y_test, y_pred, label_dict):
+    # Plot confusion matrix
     cm = confusion_matrix(y_test, y_pred, np.array(list((label_dict.values()))), normalize='true')
-
-    from sklearn.metrics import accuracy_score, f1_score
-    print("ACCURACY: ", accuracy_score(y_test, y_pred))
-
-    print("F1 Score: ", f1_score(y_test, y_pred, average='micro'))
-
-    # plot_confusion_matrix(  model, 
-    #                         X_test, 
-    #                         y_test,
-    #                         labels = list(label_dict.values()),
-    #                         display_labels = list(label_dict.keys()),
-    #                         normalize = 'all')
-    # plt.show()
-    plot_confusion_matrix_show(cm, label_dict.keys())
+    show_confusion_matrix(cm, label_dict.keys())
     
+    # Show performance metrics
     cr = classification_report(y_test, y_pred, zero_division=True, digits=5, labels=np.array(list((label_dict.values()))), target_names=label_dict.keys())
     print(cr)
 
 
-    
+# Function to evaluate the model in detail
 def evaluate_model(model, dataloader_validation, label_dict):
     _, predictions, true_vals, probs = evaluate(model, dataloader_validation)
     y_pred = accuracy_per_class(label_dict, predictions, true_vals)
     report(model, dataloader_validation, true_vals, y_pred, label_dict)
 
-    # roc_plot_show(5, true_vals, probs)
-    
 
-def roc_plot_show(n_classes, y_test, pred_prob):
-    # roc curve for classes
-    fpr = {}
-    tpr = {}
-    roc_auc ={}
-
-    for i in range(n_classes):    
-        fpr[i], tpr[i], _ = roc_curve(y_test, pred_prob[:,i], pos_label=i)
-        roc_auc[i] = auc(fpr[i], tpr[i])
-
-    # First aggregate all false positive rates
-    all_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_classes)]))
-
-    # Then interpolate all ROC curves at this points
-    mean_tpr = np.zeros_like(all_fpr)
-    for i in range(n_classes):
-        mean_tpr += interp(all_fpr, fpr[i], tpr[i])
-
-    # Finally average it and compute AUC
-    mean_tpr /=  n_classes
-
-    fpr["macro"] = all_fpr
-    tpr["macro"] = mean_tpr
-    roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
-
-    # Plot ROC curve
-    plt.plot(fpr["macro"], tpr["macro"],
-            label='macro-average ROC curve (area = {0:0.2f})'
-                ''.format(roc_auc["macro"]),
-            color='navy', linestyle='-', linewidth=2)
-
-    from itertools import cycle
-    colors = cycle(['aqua', 'darkorange', 'cornflowerblue', 'red', 'green'])
-    for i, color in zip(range(n_classes), colors):
-        plt.plot(fpr[i], tpr[i], color=color, lw=1,
-                label='ROC curve of class {0} (area = {1:0.2f})'
-                ''.format(i, roc_auc[i]))
-
-    plt.plot([0, 1], [0, 1], 'k--', lw=1)
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('ROC')
-    plt.legend(loc="lower right")
-    plt.show()
-
-def plot_confusion_matrix_show(cm, target_names, normalize=True):
+# Function to plot confusion matrix
+def show_confusion_matrix(cm, target_names, normalize=True):
     import itertools
 
     accuracy = np.trace(cm) / float(np.sum(cm))
@@ -149,7 +89,6 @@ def plot_confusion_matrix_show(cm, target_names, normalize=True):
 
     plt.figure(figsize=(8, 6))
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
-    # plt.title(title)
     plt.colorbar()
 
     if target_names is not None:
@@ -176,5 +115,4 @@ def plot_confusion_matrix_show(cm, target_names, normalize=True):
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
-    # plt.xlabel('Predicted label\naccuracy={:0.4f}; misclass={:0.4f}'.format(accuracy, misclass))
     plt.show()
