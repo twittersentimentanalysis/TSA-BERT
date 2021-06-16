@@ -36,4 +36,4 @@ api.add_resource(Emotion, '/bert/v1/emotion')
 
 # Main
 if __name__ == '__main__':
-	app.run(port='6231')
+	app.run(host='0.0.0.0', port='6231')
