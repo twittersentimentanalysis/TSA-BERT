@@ -37,7 +37,6 @@ def encode_data(bert, df, config):
     return dataset_val
 
 
-
 # Create dataloaders
 def create_dataloaders(dataset_val, config):
     dataloader_validation = DataLoader( dataset_val, 

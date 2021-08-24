@@ -1,6 +1,7 @@
 import torch
 from transformers import BertTokenizer
 
+
 def get_emotion(text, model, bert, config, label_dict):
     tokenizer = BertTokenizer.from_pretrained(config["bert-model"][bert], 
                                             do_lower_case = True)
@@ -25,7 +26,7 @@ def get_emotion(text, model, bert, config, label_dict):
     with torch.no_grad():
         output = model(input_ids, attention_mask)
 
-    # Softmax
+    # apply softmax
     softmax = torch.softmax(output[0], dim=1)
 
     emotions_prob_softmax = {}

@@ -4,8 +4,8 @@ import Testing
 import Evaluation
 
 def main():
-    # train()
-    testTL()
+    train()
+    # testTL()
 
 # Function to train models
 def train():
@@ -18,10 +18,11 @@ def train():
 
     dataloader_train, dataloader_validation = Training.create_dataloaders(dataset_train, dataset_val, config)
     
-    # Training.train(training_model, dataloader_train, dataloader_validation, config)
+    Training.train(training_model, dataloader_train, dataloader_validation, config)
 
     loaded_model = Initialization.load_pretrained_model(bert, label_dict, config)
-    Evaluation.evaluate_model(loaded_model, dataloader_validation, label_dict)
+    Evaluation.evaluate_model(loaded_model, dataloader_validation, label_dict, df, config)
+
 
 # Function to test models
 def testTL():
@@ -34,6 +35,7 @@ def testTL():
 
     loaded_model = Initialization.load_pretrained_model(bert, label_dict, config)
     Evaluation.evaluate_model(loaded_model, dataloader_validation, label_dict)
+
 
 if __name__ == '__main__':
     main()
