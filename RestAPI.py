@@ -1,4 +1,3 @@
-import json
 import Classifier
 import Initialization
 
@@ -8,6 +7,7 @@ from flask          import Flask, request, jsonify, abort
 
 app = Flask(__name__)
 api = Api(app)
+
 
 # The actual decorator function
 def require_appkey(view_function):
@@ -22,6 +22,8 @@ def require_appkey(view_function):
 			abort(401)
 	return decorated_function
 
+
+# Class for Emotion 
 class Emotion(Resource):
 	@require_appkey
 	def post(self):

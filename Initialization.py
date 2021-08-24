@@ -6,6 +6,7 @@ import matplotlib.pyplot    as plt
 
 from transformers           import BertForSequenceClassification
 
+
 # Function to read configuration file
 def read_config_file(file):
     js = open(file).read()
@@ -13,12 +14,14 @@ def read_config_file(file):
 
     return config
 
+
 # Function to initialize configuration for REST API
 def initialize_api():
     config = read_config_file('config-api.json')
     label_dict = config["label-dict"]
 
     return config, label_dict
+
 
 # Function to initialize system to train and test model
 def initialize():

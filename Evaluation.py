@@ -1,3 +1,4 @@
+import csv
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -5,20 +6,13 @@ import matplotlib.pyplot as plt
 from scipy.special      import softmax
 from sklearn.metrics    import confusion_matrix, classification_report
 
-# Function to compute accuracy of each class
-def accuracy_per_class(label_dict, preds, labels):
-    label_dict_inverse = {v: k for k, v in label_dict.items()}
-    
-    preds_flat = np.argmax(preds, axis=1).flatten()
-    labels_flat = labels.flatten()
 
-    for label in np.unique(labels_flat):
-        y_preds = preds_flat[labels_flat==label]
-        y_true = labels_flat[labels_flat==label]
-        print(f'Emotion: {label_dict_inverse[label]}')
-        print(f'Accuracy: {len(y_preds[y_preds==label])}/{len(y_true)}\n')
-
-    return preds_flat
+# Function to evaluate the model in detail
+def evaluate_model(model, dataloader_validation, label_dict, df, config):
+    _, predictions, true_vals, probs = evaluate(model, dataloader_validation)
+    y_pred = accuracy_per_class(label_dict, predictions, true_vals)
+    report(model, dataloader_validation, true_vals, y_pred, label_dict)
+    export(df, predictions, label_dict, config)
 
 
 # Function to evaluate BERT models
@@ -60,6 +54,22 @@ def evaluate(model, dataloader_val):
     return loss_val_avg, predictions, true_vals, probs
 
 
+# Function to compute accuracy of each class
+def accuracy_per_class(label_dict, preds, labels):
+    label_dict_inverse = {v: k for k, v in label_dict.items()}
+    
+    preds_flat = np.argmax(preds, axis=1).flatten()
+    labels_flat = labels.flatten()
+
+    for label in np.unique(labels_flat):
+        y_preds = preds_flat[labels_flat==label]
+        y_true = labels_flat[labels_flat==label]
+        print(f'Emotion: {label_dict_inverse[label]}')
+        print(f'Accuracy: {len(y_preds[y_preds==label])}/{len(y_true)}\n')
+
+    return preds_flat
+
+
 # Function to report results 
 def report(model, X_test, y_test, y_pred, label_dict):
     # Plot confusion matrix
@@ -70,12 +80,27 @@ def report(model, X_test, y_test, y_pred, label_dict):
     cr = classification_report(y_test, y_pred, zero_division=True, digits=5, labels=np.array(list((label_dict.values()))), target_names=label_dict.keys())
     print(cr)
 
+    
+# Output excel with emotions predicted
+def export(df, preds, label_dict, config):    
+    emotions = []
+    label_dict_inverse = {v: k for k, v in label_dict.items()}
+    predictions = np.argmax(preds, axis=1).flatten()
 
-# Function to evaluate the model in detail
-def evaluate_model(model, dataloader_validation, label_dict):
-    _, predictions, true_vals, probs = evaluate(model, dataloader_validation)
-    y_pred = accuracy_per_class(label_dict, predictions, true_vals)
-    report(model, dataloader_validation, true_vals, y_pred, label_dict)
+    for pred in predictions:
+        emotions.append(label_dict_inverse[pred])
+
+    result = dict(zip(df[df.data_type == 'val'].index.values, emotions)) 
+
+    print(df.head())
+    
+    with open(config["validation-file"], 'w', newline = '', encoding = 'utf-8') as outfile:
+        writer = csv.writer(outfile, delimiter=',')
+
+        for index, emotion in result.items():
+            writer.writerow([index, emotion])
+        
+        outfile.flush() 
 
 
 # Function to plot confusion matrix
